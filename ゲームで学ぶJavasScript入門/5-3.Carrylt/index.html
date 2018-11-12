@@ -5,6 +5,8 @@
         <meta charset="UTF-8">
         <script>
             "use strict";
+
+            //　地図データ 0:通路,1:目的地,2:荷物,6:壁
             var data = [
                 [6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6],
                 [6,6,6,6,6,0,0,0,6,6,6,6,6,6,6,6,6,6,6,6],
@@ -18,23 +20,33 @@
                 [6,6,6,6,0,0,0,0,0,0,6,6,6,6,6,6,6,6,6,6],
                 [6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6],
             ];
-
+            
+            // gc canvasに描画するためのグラフィックコンテキスト
+            // px 主人公のx座標
+            // py 主人公のy座標
             var gc,px = 12, py = 8;
 
             /**
              * 初期化関数
              */
             function init() {
+                // canvas描画用のコンテキストを設定
                 gc = document.getElementById("soko").getContext("2d");
+                // キー押下時のイベントハンドラを設定
                 onkeydown = mykeydown;
+                //再描画
                 repaint();
             }
 
+            // 上下左右ボタン
             function u(){ mykeydown({keyCode:38});}
             function d(){ mykeydown({keyCode:40});}
             function l(){ mykeydown({keyCode:37});}
             function r(){ mykeydown({keyCode:39});}
 
+            /**
+             * キー押下時のイベントハンドラ
+             */
             function mykeydown(e) {
                 var dx0 = px, dx1 = px, dy0 = py, dy1 = py;
                 switch(e.keyCode) {
@@ -83,6 +95,8 @@
 
                 gc.drawImage(imgWorker, px * 40, py * 40, 40, 40);
             }
+
+            
         
         </script>
 
