@@ -1,0 +1,202 @@
+<html>
+    <head>
+        <title>FunkyBlocks</title>
+        <META charset="UTF-8">
+        <style>
+            #canvas {
+                width: 800px;
+                height: 600px;
+                touch-action: none;
+            }
+            #START {
+                position: absolute;
+                left: 200px;
+                top:200;
+            }
+        </style>
+        <script>
+            "use strict";
+            var ctx, tiles = [], moves = [], mIndex = 0, mCount = 0,times = [];
+            var timer = NaN,startTime=NaN,elapsed = 0,score=0,bgimage,sound;
+            var mouseX = null, mouseY = null,mouseUpX = null,mouseUpY = null;
+            var message = ["","good","very good","super","wonderful!","great!!","amazing","brilliant!","excellent!!"];
+
+            function rand(v) {
+                return Math.floor(Math.random() * v)
+            }
+
+            function iterate(f) {
+                for(var x = 0; x < 12; x++) {
+                    for(var y = 0; y < 12; y++ ) {
+                        f(x,y,tiles[x][y]);
+                    }
+                }
+            }
+            /**
+             * タイルオブジェクト
+             */
+            function Tile(x,y) {
+                this.x = x;
+                this.y = y;
+                this.px = x;
+                this.py = y;
+                this.count = 0;
+                this.getX = function() {
+                    return this.x + (this.px - this.x) * (this.count) / 20;
+                }
+                this.getY = function() {
+                    return this.y + (this.py - this.y) * (this.count) / 20;
+                }
+                this.move = function(px,py,color) {
+                    this.px = px;
+                    this.py = py;
+                    this.color = color;
+                    this.count = 20;
+                    this.moving = true;
+                    moves.push(this);
+                }
+                this.update = function() {
+                    if(--this.count <= 0) {
+                        this.moving = false;
+                    }
+                }
+            }
+
+            function init() {
+                //タイルオブジェクトの生成
+                for(var x = 0; x < 12; x++) {
+                    tiles[x] = [];
+                    for(var y = 0; y < 12; y++) {
+                        tiles[x][y] = new Tile(x,y);
+                    }
+                }
+
+                // 3つ連続しないよう初期色の配置
+                iterate(function(x,y,t) {
+                    while(true) {
+                        var r = rand(5);
+                        if(setColor(x,y,r)) {
+                            t.color = r;
+                            break;
+                        }
+                    }
+                });
+
+                //残り時間の初期化
+                for(var i = 0; i < 15; i++) {
+                    var t = document.createElement("img");
+                    t.src = "time" + i + ".png";
+                    times.push(t);
+                }
+
+                // Canvas初期化
+                bgimage = document.getElementById("bgimage");
+                var canvas = document.getElementById("canvas");
+                ctx = canvas.getContext("2d");
+                ctx.textAlign = "center";
+
+                sound = document.getElementById("sound");
+                repaint();
+            }
+
+            function go() {
+                var canvas = document.getElementById("canvas");
+                canvas.onmousedown = mymousedown;
+                canvas.onmouseup = mymouseup;
+                canvas.addEventListener('touchstart',mymousedown);
+                canvas.addEventListener('touchmove',mymousemove);
+                canvas.addEventListener('touched',mymouseup);
+
+                startTIme = new Date();
+                timer = setInterval(tick,25);
+
+                document.body.addEventListener('touchmove', function(event) {
+                    event.preventDefault();
+                },false);
+                document.getElementById("START").style.display = "none";
+                document.getElementById("bgm").play();
+            }
+
+            /**
+             *メインルーチン
+             */
+            function tick() {
+                // メッセージフェードアウト効果
+                mCount = Math.max(0,mCout - 1);
+                if(mCount == 0) {
+                    mIndex = 0;
+                }
+
+                if(moves.length > 0) {
+                    for(var i = 0; i < moves.length; i++) {
+                        moves[i].update();
+                    }
+                    moves = moves.filter(function(t) {return t.count != 0});
+                    if(moves.length == 0) {
+                        var s = removeTile(); //タイル消去
+                        if(s > 0) {
+                            //初回 or 連鎖
+                            mIndex = Math.min(message.length - 1,mIndex + 1);
+                            mCount = 50;
+                            score += s * 10 + mIndex * s * 100;
+                            sound.pause();
+                            sound.currentTime = 0;
+                            sound.play();
+                        }
+                        fall();
+                    }
+                }
+
+                elapsed = ((new Date()).getTime() - startTime) / 1000;
+                if(elapsed > 69) {
+                    clearInterval(timer);
+                    timer = NaN;
+                }
+                repaint();
+            }
+
+            function setColor(x,y,c) {
+                var flag = true;
+                if(1 < x) {
+                    var c0 = tiles[x-2][y].color;
+                    var c1 = tiles[x-1][y].color;
+                    flag &= !(c0 == c1 && c1 == c);
+                }
+                if(1 < y) {
+                    var c0 = tiles[x][y - 2].color;
+                    var c1 = tiles[x][y - 1].color;
+                    flag &= !(c0 == c1 && c1 == c);
+                }
+                if(y < 8) {
+                    var c0 = tiles[x][y + 2].color;
+                    var c1 = tiles[x][y + 1].color;
+                    flag &= !(c0 == c1 && c1 == c);
+                }
+                return flag;
+            }
+
+            function mymousedown(e) {
+                mouseX = !isNaN(e.offsetX) ? e.offsetX : e.touches[0].clientX;
+                mouseY = !isNaN(e.offsetY) ? e.offsetY : e.touches[0].clientY;
+            }
+
+            function mymousemove(e) {
+                mouseUpX = !isNaN(e.offsetX) ? e.offsetX : e.touches[0].clientX;
+                mouseUpY = !isNaN(e.offsetY) ? e.offsetY : e.touches[0].clientY;
+            }
+
+        </script>
+
+    </head>
+    <body onload="init()">
+        <audio src="sound.mp3" id="sound"></audio>
+        <audio src="letsgo.mp3" id="bgm"></audio>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <img id="bgimage" src="back.png" style="display: none" />
+        <img id="block0" src="block0.png" style="display: none" />
+        <img id="block1" src="block1.png" style="display: none" />
+        <img id="block2" src="block2.png" style="display: none" />
+        <img id="block3" src="block3.png" style="display: none" />
+        <img id="block4" src="block4.png" style="display: none" />
+    </body>
+</html>
